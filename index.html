@@ -64,6 +64,7 @@
     .upload-status { color:#785f60; font:600 .75rem system-ui,sans-serif; }
     .submit-art { min-height:44px; padding:0 16px; border:0; background:var(--rose); color:#fffaf4; cursor:pointer; font:700 .78rem system-ui,sans-serif; letter-spacing:.04em; }
     .submit-gallery { min-height:50px; padding:10px; border:0; background:var(--plum); color:#fffaf4; cursor:pointer; font:700 .72rem/1.25 system-ui,sans-serif; letter-spacing:.04em; }
+    .submit-gallery.published { background:#9a9a9a; cursor:default; }
     .artist-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:22px 0 16px; }
     .artist-form label { display:grid; gap:6px; color:#695252; font:700 .72rem system-ui,sans-serif; letter-spacing:.04em; }
     .artist-form .wide { grid-column:1 / -1; }
@@ -318,6 +319,8 @@
         document.querySelector('.artist').textContent = `by ${chosen.name || artistName.value.trim()}`;
         document.querySelector('h1').textContent = 'Featured original artwork';
         document.querySelector('.price').textContent = chosen.price ? `$${Number(chosen.price).toFixed(2)} CAD` : 'Price set by artist';
+        const submit = document.getElementById('submit-gallery');
+        submit.textContent = 'Gallery published'; submit.classList.add('published'); submit.disabled = true;
         uploadStatus.textContent = `Gallery submitted in this demo. One of ${pieces.length} artworks is now featured at the top.`;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch { uploadStatus.textContent = 'The demo could not load this artist gallery.'; }
