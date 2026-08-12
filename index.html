@@ -62,11 +62,22 @@
     .upload-label { display:inline-flex; align-items:center; min-height:44px; padding:0 16px; background:var(--plum); color:#fffaf4; cursor:pointer; font:700 .78rem system-ui,sans-serif; letter-spacing:.04em; }
     .upload-label input { position:absolute; width:1px; height:1px; opacity:0; }
     .upload-status { color:#785f60; font:600 .75rem system-ui,sans-serif; }
-    .previews { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; min-height:90px; }
+    .submit-art { min-height:44px; padding:0 16px; border:0; background:var(--rose); color:#fffaf4; cursor:pointer; font:700 .78rem system-ui,sans-serif; letter-spacing:.04em; }
+    .artist-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:22px 0 16px; }
+    .artist-form label { display:grid; gap:6px; color:#695252; font:700 .72rem system-ui,sans-serif; letter-spacing:.04em; }
+    .artist-form .wide { grid-column:1 / -1; }
+    .artist-form input { width:100%; min-height:42px; border:1px solid var(--line); padding:9px; color:var(--ink); background:#fff; font:400 .88rem system-ui,sans-serif; }
+    .previews { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px; min-height:90px; }
+    .art-slots { display:grid; grid-template-columns:repeat(auto-fill,minmax(78px,1fr)); gap:9px; margin-top:18px; }
+    .art-slots[hidden] { display:none; }
+    .art-slot { position:relative; aspect-ratio:1; display:grid; place-items:center; overflow:hidden; padding:7px; border:1px dashed #bda99b; color:#806b65; background:#fff; cursor:pointer; text-align:center; font:700 .64rem/1.2 system-ui,sans-serif; }
+    .art-slot:hover { border-color:var(--rose); }
+    .art-slot input { position:absolute; inset:0; z-index:2; width:100%; height:100%; opacity:0; cursor:pointer; }
+    .art-slot img { position:absolute; inset:0; z-index:1; width:100%; height:100%; object-fit:cover; }
     .preview { aspect-ratio:1; display:grid; place-items:center; overflow:hidden; border:1px dashed #cdb9ae; color:#987e78; background:#fff; text-align:center; font:600 .68rem/1.3 system-ui,sans-serif; }
     .preview img { width:100%; height:100%; object-fit:cover; }
     footer { padding:22px 0 35px; border-top:1px solid var(--line); color:#7d6666; font:500 .74rem system-ui,sans-serif; display:flex; justify-content:space-between; gap:15px; }
-    @media(max-width:740px) { main { grid-template-columns:1fr; padding-top:55px; } .placeholder { min-height:360px; } .discover-head { display:block; } .discover-head p { margin-top:9px; } .river { grid-template-columns:48px minmax(0,1fr) 20px; min-height:100px; padding:15px; border-radius:35% 65% 38% 62% / 13% 14% 14% 15%; } .river-no { width:37px; height:37px; } .previews { grid-template-columns:repeat(3,1fr); } footer { flex-direction:column; } }
+    @media(max-width:740px) { main { grid-template-columns:1fr; padding-top:55px; } .placeholder { min-height:360px; } .discover-head { display:block; } .discover-head p { margin-top:9px; } .river { grid-template-columns:48px minmax(0,1fr) 20px; min-height:100px; padding:15px; border-radius:35% 65% 38% 62% / 13% 14% 14% 15%; } .river-no { width:37px; height:37px; } .artist-form { grid-template-columns:1fr; } .previews { grid-template-columns:repeat(3,1fr); } footer { flex-direction:column; } }
   </style>
 </head>
 <body>
@@ -143,15 +154,16 @@
     <section class="upload-studio" aria-labelledby="upload-title">
       <p class="eyebrow">For artists</p>
       <h2 id="upload-title">Upload your original art</h2>
-      <p>Select up to five images of one original piece: for example, the full artwork, close-up details, and it displayed in a room.</p>
+      <p>Enter your name and email, then add one image for each original artwork. An artist can have up to 50 artwork spaces.</p>
+      <div class="artist-form">
+        <label>Artist name<input id="artist-name" type="text" placeholder="Your name"></label>
+        <label>Artist email<input id="artist-email" type="email" placeholder="you@example.com"></label>
+      </div>
       <div class="upload-controls">
-        <label class="upload-label">Choose up to 5 images<input id="art-upload" type="file" accept="image/*" multiple></label>
-        <span id="upload-status" class="upload-status">No images selected</span>
+        <span id="upload-status" class="upload-status">Enter your name and a valid email to open 50 artwork spaces.</span>
       </div>
-      <div id="previews" class="previews" aria-live="polite">
-        <div class="preview">Image 1</div><div class="preview">Image 2</div><div class="preview">Image 3</div><div class="preview">Image 4</div><div class="preview">Image 5</div>
-      </div>
-      <p class="note">Demo note: files stay only in this browser preview. A future ArtSell backend will be needed to submit and publish artist listings securely.</p>
+      <div id="art-slots" class="art-slots" hidden aria-live="polite"></div>
+      <p class="note">Demo note: this browser remembers an artist gallery by email. A secure backend will be needed to make it available across devices and to real ArtSell visitors.</p>
     </section>
 
     <footer>
@@ -201,24 +213,79 @@
     document.getElementById('clear').addEventListener('click', () => { context.clearRect(0, 0, canvas.width, canvas.height); setCanvasSize(); });
     setCanvasSize();
 
-    const upload = document.getElementById('art-upload');
-    const previews = document.getElementById('previews');
+    const artistName = document.getElementById('artist-name');
+    const artistEmail = document.getElementById('artist-email');
+    const artSlots = document.getElementById('art-slots');
     const uploadStatus = document.getElementById('upload-status');
-    upload.addEventListener('change', () => {
-      const files = Array.from(upload.files).slice(0, 5);
-      previews.innerHTML = '';
-      files.forEach((file, index) => {
-        const box = document.createElement('div');
-        box.className = 'preview';
-        const image = document.createElement('img');
-        image.alt = `Preview ${index + 1}: ${file.name}`;
-        image.src = URL.createObjectURL(file);
-        box.appendChild(image); previews.appendChild(box);
+    let activeArtistEmail = '';
+    const databaseRequest = indexedDB.open('ArtSellDemo', 1);
+    databaseRequest.onupgradeneeded = event => {
+      const database = event.target.result;
+      const store = database.createObjectStore('artwork', { keyPath: 'key' });
+      store.createIndex('email', 'email', { unique: false });
+    };
+    const databaseReady = new Promise((resolve, reject) => {
+      databaseRequest.onsuccess = () => resolve(databaseRequest.result);
+      databaseRequest.onerror = () => reject(databaseRequest.error);
+    });
+    async function savedArtwork(email) {
+      const database = await databaseReady;
+      return new Promise((resolve, reject) => {
+        const request = database.transaction('artwork', 'readonly').objectStore('artwork').index('email').getAll(email);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
       });
-      for (let index = files.length; index < 5; index += 1) {
-        const box = document.createElement('div'); box.className = 'preview'; box.textContent = `Image ${index + 1}`; previews.appendChild(box);
+    }
+    async function saveArtwork(record) {
+      const database = await databaseReady;
+      return new Promise((resolve, reject) => {
+        const request = database.transaction('artwork', 'readwrite').objectStore('artwork').put(record);
+        request.onsuccess = () => resolve(); request.onerror = () => reject(request.error);
+      });
+    }
+    function makeSlots(saved = []) {
+      artSlots.innerHTML = '';
+      for (let index = 1; index <= 50; index += 1) {
+        const slot = document.createElement('label'); slot.className = 'art-slot';
+        slot.innerHTML = `<span>Art ${index}<br>+ image</span><input type="file" accept="image/*" aria-label="Upload artwork ${index}" data-slot="${index}">`;
+        const art = saved.find(item => item.slot === index);
+        if (art) { slot.querySelector('span').remove(); const image = document.createElement('img'); image.src = art.image; image.alt = `Artwork ${index}`; slot.appendChild(image); }
+        artSlots.appendChild(slot);
       }
-      uploadStatus.textContent = files.length ? `${files.length} image${files.length === 1 ? '' : 's'} ready for preview` : 'No images selected';
+    }
+    async function openArtSlots() {
+      if (!artistName.value.trim() || !artistEmail.validity.valid) {
+        artSlots.hidden = true;
+        uploadStatus.textContent = 'Enter your name and a valid email to open 50 artwork spaces.';
+        return;
+      }
+      const email = artistEmail.value.trim().toLowerCase();
+      if (email !== activeArtistEmail) {
+        activeArtistEmail = email;
+        uploadStatus.textContent = 'Loading this artist gallery…';
+        try { const saved = await savedArtwork(email); if (activeArtistEmail !== email) return; makeSlots(saved); uploadStatus.textContent = `${saved.length} of 50 artwork spaces used for this email.`; }
+        catch { makeSlots(); uploadStatus.textContent = '50 artwork spaces are open for this artist.'; }
+      }
+      artSlots.hidden = false;
+    }
+    artistName.addEventListener('input', openArtSlots);
+    artistEmail.addEventListener('input', openArtSlots);
+    artSlots.addEventListener('change', event => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const slot = event.target.closest('.art-slot');
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const label = slot.querySelector('span'); if (label) label.remove();
+        const existing = slot.querySelector('img'); if (existing) existing.remove();
+        const image = document.createElement('img'); image.src = reader.result; image.alt = 'Artwork preview'; slot.appendChild(image);
+        const count = artSlots.querySelectorAll('img').length;
+        try {
+          await saveArtwork({ key: `${activeArtistEmail}-${event.target.dataset.slot}`, email: activeArtistEmail, slot: Number(event.target.dataset.slot), image: reader.result });
+          uploadStatus.textContent = `${count} of 50 artworks saved for this email in this browser.`;
+        } catch { uploadStatus.textContent = `${count} image previews selected. Browser saving was unavailable.`; }
+      };
+      reader.readAsDataURL(file);
     });
   </script>
 </body>
